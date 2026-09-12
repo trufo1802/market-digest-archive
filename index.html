@@ -1,0 +1,1157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>market digest — archive</title>
+<!-- Inline data URI, not a favicon file: the page makes zero external
+     requests by design and the build writes exactly four files. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22%23000%22%2F%3E%3Ctext%20x%3D%223%22%20y%3D%2228%22%20font-family%3D%22Georgia%2C%26apos%3BTimes%20New%20Roman%26apos%3B%2Cserif%22%20font-size%3D%2230%22%20fill%3D%22%23fff%22%20textLength%3D%2225%22%20lengthAdjust%3D%22spacingAndGlyphs%22%3Em%3C%2Ftext%3E%3C%2Fsvg%3E">
+<style>
+/* ============================================================
+   Design language: deep-navy ground, electric-blue chrome, and
+   a rim glow used SELECTIVELY. The reference lights one tile and
+   dims its neighbours, so glow here marks what is ACTIVE (focused
+   input, selected tab, hovered card) and never everything at once
+   -- glow on everything is just brightness, and stops meaning
+   anything.
+
+   Light mode is a sibling, not a clone: no faked neon, the same
+   radius/type/spacing carried by hairline borders and soft tinted
+   shadows instead.
+
+   Category hues are DATA (macro/crypto/stocks); blue is CHROME.
+   The two never trade jobs.
+   ============================================================ */
+:root{
+  color-scheme: light dark;
+
+  --bg:#f2f5fb;
+  --bg-glow:rgba(37,99,235,.10);
+  --card:#ffffff;
+  --card-2:#fbfcfe;
+  --fg:#0b1020;
+  --muted:#5b6577;
+  --dim:#8a93a5;
+  --line:#e0e6f1;
+  --line-2:#eef2f8;
+
+  --accent:#2563eb;
+  --accent-2:#1d4ed8;
+  --ring:rgba(37,99,235,.28);
+  --glow:0 0 0 1px rgba(37,99,235,.26), 0 12px 34px -16px rgba(37,99,235,.6);
+  --lift:0 1px 2px rgba(11,16,32,.04), 0 10px 26px -20px rgba(11,16,32,.4);
+
+  --macro:#2563eb;
+  --crypto:#b45309;
+  --stocks:#11794a;
+  /* video categories; crypto is shared with the message palette above */
+  --econ:#0f766e;
+  --tech:#7c3aed;
+
+  --mark:#ffe9a3;
+  --markfg:#3a2c00;
+  --danger:#d92d20;
+
+  --r:14px;
+  --r-sm:9px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+}
+:root[data-theme="dark"]{
+    --bg:#070911;
+    --bg-glow:rgba(77,141,255,.16);
+    --card:#0f1421;
+    --card-2:#0b0f1a;
+    --fg:#e9edf7;
+    --muted:#828da3;
+    --dim:#5d6879;
+    --line:#1b2233;
+    --line-2:#151b28;
+
+    --accent:#4d8dff;
+    --accent-2:#7fb0ff;
+    --ring:rgba(77,141,255,.42);
+    --glow:0 0 0 1px rgba(77,141,255,.45), 0 0 26px -4px rgba(77,141,255,.35), 0 0 70px -22px rgba(77,141,255,.55);
+    --lift:inset 0 1px 0 rgba(255,255,255,.04), 0 10px 30px -20px #000;
+
+    --macro:#5b9cff;
+    --crypto:#fbbf24;
+    --stocks:#3ddc84;
+    --econ:#2dd4bf;
+    --tech:#a78bfa;
+
+    --mark:#5a3f05;
+    --markfg:#ffe9a3;
+    --danger:#ff6b60;
+  color-scheme: dark;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--fg);
+  font:15px/1.6 var(--sans);
+  -webkit-text-size-adjust:100%;
+}
+/* Two soft pools of light so the ground reads as depth rather than flat paint.
+   On its own fixed layer rather than as a body background-image: with
+   `background-attachment:fixed` the browser sized the gradient layer to
+   something smaller than the viewport and its bounding box showed up as a
+   hard-edged lighter rectangle in the bottom-right corner. An element with
+   inset:0 has no such ambiguity. */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:
+    radial-gradient(110vw 70vh at 50% -25vh, var(--bg-glow), transparent 65%),
+    radial-gradient(80vw 60vh at 100% 100%, var(--bg-glow), transparent 60%);
+}
+/* 16px minimum on anything focusable, or iOS Safari zooms the whole page in. */
+input,select,button,textarea{font-family:inherit;font-size:16px}
+.wrap{max-width:840px;margin:0 auto;padding:0 14px}
+.hidden{display:none !important}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- gate ---------- */
+#gate{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:22px}
+#gate form{
+  width:100%;max-width:370px;padding:30px 26px 24px;
+  background:linear-gradient(180deg,var(--card),var(--card-2));
+  border:1px solid var(--line);border-radius:20px;
+  box-shadow:var(--glow);
+}
+#gate h1{
+  font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  margin:0 0 10px;color:var(--accent);
+}
+#gate p{color:var(--muted);font-size:13px;line-height:1.55;margin:0 0 20px}
+#pass{
+  width:100%;padding:13px 14px;border-radius:var(--r-sm);
+  border:1px solid var(--line);background:var(--bg);color:var(--fg);
+  margin-bottom:11px;transition:border-color .15s,box-shadow .15s;
+}
+#pass:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--ring)}
+#go{
+  width:100%;min-height:46px;border:0;border-radius:var(--r-sm);cursor:pointer;
+  background:linear-gradient(180deg,var(--accent),var(--accent-2));
+  color:#fff;font-weight:650;letter-spacing:.03em;
+  box-shadow:0 8px 22px -12px var(--accent);
+}
+#go:hover{filter:brightness(1.08)}
+#go:disabled{opacity:.55;cursor:default}
+#err{color:var(--danger);font-size:13px;min-height:19px;margin-top:11px}
+
+/* ---------- header ---------- */
+header{
+  position:sticky;top:0;z-index:10;padding-top:14px;
+  background:color-mix(in srgb, var(--bg) 84%, transparent);
+  backdrop-filter:saturate(1.4) blur(14px);
+  -webkit-backdrop-filter:saturate(1.4) blur(14px);
+  border-bottom:1px solid var(--line-2);
+}
+#q{
+  width:100%;padding:12px 13px;margin-bottom:12px;border-radius:var(--r-sm);
+  border:1px solid var(--line);background:var(--card);color:var(--fg);
+  transition:border-color .15s,box-shadow .15s;
+}
+#q:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--ring)}
+#q::placeholder{color:var(--dim)}
+
+.tabs{display:flex;gap:8px;padding:0 0 12px}
+.tabs button{
+  flex:1;min-height:40px;cursor:pointer;
+  border:1px solid var(--line);border-radius:var(--r-sm);
+  background:var(--card);color:var(--muted);
+  font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  transition:color .15s,border-color .15s,box-shadow .15s,background .15s;
+}
+.tabs button:hover{color:var(--fg)}
+/* The reference's one lit tile: only the selected control glows. */
+.tabs button[aria-selected=true]{
+  color:#fff;border-color:transparent;
+  background:linear-gradient(180deg,var(--accent),var(--accent-2));
+  box-shadow:0 8px 24px -12px var(--accent);
+}
+
+.seg{display:flex;gap:8px;margin:0 0 12px}
+.seg button{
+  flex:1;min-height:36px;padding:6px 4px;cursor:pointer;
+  border:1px solid var(--line);border-radius:var(--r-sm);
+  background:var(--card);color:var(--muted);
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  transition:color .15s,border-color .15s,box-shadow .15s;
+}
+.seg button:hover{color:var(--fg);border-color:var(--accent)}
+.seg button[aria-pressed=true]{
+  color:var(--accent);border-color:var(--accent);
+  box-shadow:0 0 0 1px var(--ring), 0 0 20px -8px var(--accent);
+}
+
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.filters select,.filters input[type=date]{
+  flex:1 1 auto;min-width:0;padding:9px 10px;min-height:40px;
+  border:1px solid var(--line);border-radius:var(--r-sm);
+  background:var(--card);color:var(--fg);
+}
+.filters select:focus,.filters input[type=date]:focus{
+  outline:0;border-color:var(--accent);box-shadow:0 0 0 3px var(--ring);
+}
+.bar{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:6px 0 14px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--dim);
+}
+#count{font-family:var(--mono);letter-spacing:.06em}
+.bar button{
+  background:none;border:0;cursor:pointer;color:var(--accent);
+  padding:6px 0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+}
+
+/* ---------- run summary ---------- */
+#summary{margin:16px 0 4px}
+#summary .sec{
+  background:linear-gradient(180deg,var(--card),var(--card-2));
+  border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:var(--r);padding:15px 17px;margin-bottom:11px;box-shadow:var(--lift);
+}
+#summary h2{
+  font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  margin:0 0 8px;color:var(--dim);
+}
+#summary .body{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+#runhead{
+  font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);margin:18px 0 8px;font-family:var(--mono);
+}
+
+/* ---------- cards ---------- */
+article,.vid{
+  position:relative;
+  background:linear-gradient(180deg,var(--card),var(--card-2));
+  border:1px solid var(--line);border-radius:var(--r);
+  padding:13px 15px;margin-bottom:11px;
+  box-shadow:var(--lift);
+  transition:border-color .18s,box-shadow .18s;
+}
+/* Category is DATA, so it rides a coloured edge rather than the chrome. */
+article[data-cat],.vid[data-cat]{border-left:3px solid var(--edge,var(--line))}
+[data-cat=macro]{--edge:var(--macro)}
+[data-cat=crypto]{--edge:var(--crypto)}
+[data-cat=stocks]{--edge:var(--stocks)}
+[data-cat=econ]{--edge:var(--econ)}
+[data-cat=tech]{--edge:var(--tech)}
+@media (hover:hover){
+  article:hover,.vid:hover{
+    border-color:color-mix(in srgb,var(--accent) 45%,var(--line));
+    box-shadow:var(--glow);
+  }
+}
+
+.meta{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  font-size:11px;color:var(--dim);margin-bottom:7px;
+  letter-spacing:.05em;font-family:var(--mono);
+}
+.pill{
+  display:inline-block;padding:2px 8px;border-radius:999px;font-family:var(--sans);
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--edge,var(--muted));
+  background:color-mix(in srgb,var(--edge,var(--muted)) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--edge,var(--muted)) 32%,transparent);
+}
+.pill.macro{--edge:var(--macro)}.pill.crypto{--edge:var(--crypto)}.pill.stocks{--edge:var(--stocks)}
+.pill.econ{--edge:var(--econ)}.pill.tech{--edge:var(--tech)}
+.pill.none{--edge:var(--dim)}
+.chan{font-family:var(--sans);font-weight:650;color:var(--fg);overflow-wrap:anywhere;letter-spacing:0}
+.gcount{margin-left:auto;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+
+.actions{margin-left:auto;display:flex;align-items:center;gap:2px;flex:none}
+.actions a,.actions button{
+  color:var(--accent);background:none;border:0;cursor:pointer;
+  font-family:var(--mono);font-size:11px;letter-spacing:.04em;
+  padding:5px 8px;min-height:32px;display:inline-flex;align-items:center;
+  border-radius:7px;white-space:nowrap;transition:background .15s,color .15s;
+}
+.actions a:hover,.actions button:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.actions .done{color:var(--stocks)}
+
+.text{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.62}
+.text.clip{display:-webkit-box;-webkit-line-clamp:8;-webkit-box-orient:vertical;overflow:hidden}
+.more{
+  background:none;border:0;cursor:pointer;color:var(--accent);
+  padding:7px 0;font-size:12px;letter-spacing:.04em;
+}
+mark{background:var(--mark);color:var(--markfg);border-radius:3px;padding:0 2px}
+
+/* grouped messages */
+.gitem{border-top:1px solid var(--line-2);margin-top:10px;padding-top:10px}
+.gitem:first-of-type{border-top:0;margin-top:0;padding-top:0}
+.gtime{
+  display:flex;align-items:center;gap:8px;margin-bottom:4px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--dim);
+}
+
+/* ---------- videos ---------- */
+.vid h3{font-size:15px;line-height:1.38;margin:6px 0 8px;overflow-wrap:anywhere}
+.vid h3 a{color:var(--fg);text-decoration:none}
+.vid h3 a:hover{color:var(--accent)}
+.vid .sum{border-top:1px solid var(--line-2);margin-top:11px;padding-top:11px}
+.vid .sum h2{
+  font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);margin:16px 0 6px;
+}
+.vid .sum h2:first-child{margin-top:0}
+.vid .sum p{margin:0 0 9px;font-size:14px;line-height:1.62;overflow-wrap:anywhere}
+.vid .sum ul{margin:0 0 9px;padding-left:19px;font-size:14px}
+.vid .sum li{margin-bottom:5px;overflow-wrap:anywhere}
+.vid .sum li::marker{color:var(--accent)}
+.vid .sum.clip{
+  max-height:158px;overflow:hidden;
+  -webkit-mask-image:linear-gradient(#000 58%,transparent);
+  mask-image:linear-gradient(#000 58%,transparent);
+}
+
+/* ---------- misc ---------- */
+#empty{text-align:center;color:var(--dim);padding:56px 14px;font-size:13px}
+footer{
+  color:var(--dim);font-size:10px;text-align:center;padding:26px 14px 40px;
+  letter-spacing:.1em;text-transform:uppercase;font-family:var(--mono);
+}
+.bar-right{display:flex;align-items:center;gap:10px}
+#catalog{margin-top:18px}
+#catalog .grp{margin-bottom:22px}
+#catalog h2{
+  font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--fg);margin:0 0 3px;
+}
+#catalog .grp > p{color:var(--dim);font-size:11px;margin:0 0 10px;font-family:var(--mono)}
+#catalog .cat{
+  display:flex;align-items:baseline;gap:9px;
+  padding:9px 0;border-top:1px solid var(--line-2);
+}
+#catalog .cat:first-of-type{border-top:0}
+#catalog .cat > .pill{flex:none;margin-top:2px}
+#catalog .chips{display:flex;flex-wrap:wrap;gap:6px}
+#catalog .chips a,#catalog .chips span{
+  display:inline-flex;align-items:center;min-height:30px;
+  padding:3px 10px;border-radius:999px;font-size:12px;
+  border:1px solid var(--line);background:var(--card);
+  color:var(--fg);text-decoration:none;
+  transition:border-color .15s,color .15s;
+}
+#catalog .chips a:hover{border-color:var(--accent);color:var(--accent)}
+/* A private Telegram channel has no public URL; show it plainly rather than
+   as a link that goes nowhere. */
+#catalog .chips span{color:var(--dim);border-style:dashed}
+.theme-btn{
+  background:none;border:0;cursor:pointer;padding:4px 2px;line-height:1;
+  font-size:13px;opacity:.75;transition:opacity .15s;
+}
+.theme-btn:hover{opacity:1}
+/* Suppressed for one frame around a theme swap. A transitioned property
+   whose value comes from a custom property does NOT re-resolve when that
+   property changes, so card border-colors stayed on the old palette until
+   something else forced a recompute. Killing transitions across the swap
+   sidesteps it, and a theme change should be instant anyway rather than
+   animating every card at once. */
+.no-transition,.no-transition *{transition:none !important}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+<script>
+(function(){
+  var stored = null;
+  try { stored = localStorage.getItem("theme"); } catch (e) {}
+  var dark = stored ? stored === "dark"
+                    : matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+})();
+</script>
+</head>
+<body>
+
+<div id="gate">
+  <form id="gateform">
+    <h1>market digest — archive</h1>
+    <p>Encrypted. The passphrase never leaves this device.</p>
+    <input id="pass" type="password" autocomplete="current-password"
+           placeholder="Passphrase" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <button id="go" type="submit">Unlock</button>
+    <div id="err" role="alert"></div>
+  </form>
+</div>
+
+<div id="app" class="hidden">
+  <header>
+    <div class="wrap">
+      <div class="tabs" role="tablist">
+        <button id="tab-s" role="tab" type="button">Sources</button>
+        <button id="tab-m" role="tab" type="button">Messages</button>
+        <button id="tab-v" role="tab" type="button">Videos</button>
+      </div>
+      <input id="q" type="search" placeholder="Search messages"
+             autocapitalize="off" autocorrect="off" spellcheck="false">
+      <div class="seg" id="cats"></div>
+      <div class="filters">
+        <select id="src" aria-label="Source"></select>
+        <select id="run"></select>
+      </div>
+      <div class="filters">
+        <select id="chan"></select>
+      </div>
+      <div class="filters" id="dates">
+        <input id="from" type="date" aria-label="From date">
+        <input id="to" type="date" aria-label="To date">
+      </div>
+      <div class="bar" id="bar">
+        <span id="count"></span>
+        <span class="bar-right">
+          <button id="theme" class="theme-btn" type="button" aria-label="Switch theme"></button>
+          <button id="clear" type="button">Clear filters</button>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="summary"></div>
+    <div id="runhead"></div>
+    <div id="list"></div>
+    <div id="videos"></div>
+    <div id="catalog"></div>
+    <div id="empty" class="hidden">Nothing matches these filters.</div>
+    <div id="more" style="height:1px"></div>
+    <footer id="built"></footer>
+  </main>
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const PAGE = 200;
+const norm = s => (s || "").normalize("NFC");
+
+let DATA = null;      // decrypted payload
+let ROWS = [];        // enriched message rows
+let VIDS = [];        // enriched video rows
+let VIEW = [];        // current filter result (messages)
+let GROUPS = [];      // VIEW collapsed into runs of consecutive same-channel msgs
+let shown = 0;
+const F = { tab:"m", q:"", src:"", cat:"", ch:"", run:"", from:"", to:"" };
+
+/* ---------- unlock ---------- */
+const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function unlock(env, pass){
+  const km = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+  const key = await crypto.subtle.deriveKey(
+    { name:"PBKDF2", salt:b64(env.salt), iterations:env.iter, hash:"SHA-256" },
+    km, { name:"AES-GCM", length:256 }, false, ["decrypt"]);
+  // Throws OperationError on a wrong passphrase -- the GCM tag IS the check,
+  // so there is no separate verifier blob to compare against.
+  const plain = await crypto.subtle.decrypt(
+    { name:"AES-GCM", iv:b64(env.nonce) }, key, b64(env.ct));
+  let text;
+  if (env.gz) {
+    const ds = new Response(new Blob([plain]).stream().pipeThrough(new DecompressionStream("gzip")));
+    text = await ds.text();
+  } else {
+    text = new TextDecoder().decode(plain);
+  }
+  return JSON.parse(text);
+}
+
+$("gateform").addEventListener("submit", async e => {
+  e.preventDefault();
+  const err = $("err"), btn = $("go");
+  err.textContent = "";
+  if (!window.crypto || !crypto.subtle) {
+    err.textContent = "This browser can't decrypt the archive (needs HTTPS and a modern browser).";
+    return;
+  }
+  if (typeof DecompressionStream === "undefined") {
+    err.textContent = "Browser too old to unpack the archive — update Safari/Chrome.";
+    return;
+  }
+  btn.disabled = true; btn.textContent = "Decrypting…";
+  try {
+    // no-cache, or a phone happily serves yesterday's cycle from disk.
+    const env = await (await fetch("payload.json", { cache:"no-cache" })).json();
+    DATA = await unlock(env, $("pass").value);
+    start();
+  } catch (ex) {
+    err.textContent = (ex && ex.name === "OperationError")
+      ? "Wrong passphrase."
+      : "Could not load the archive: " + (ex && ex.message ? ex.message : ex);
+    btn.disabled = false; btn.textContent = "Unlock";
+  }
+});
+
+/* ---------- setup after unlock ---------- */
+function start(){
+  $("gate").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  $("pass").value = "";
+
+  // [id, ch, cat, tsMin, msgId, runId, text]
+  ROWS = DATA.rows.map(r => {
+    const ch = DATA.channels[r[1]] || { n:"?", h:null, s:0 };
+    return {
+      id:r[0], chIdx:r[1], cat:DATA.cats[r[2]] || "", ts:r[3] * 60000,
+      runId:r[5], text:r[6],
+      chan:ch.n, src:DATA.srcs ? (DATA.srcs[ch.s] || "") : "",
+      // r[4] is an int for Telegram (a message id, rebuilt against the channel
+      // handle) or a full URL string for any other source.
+      url: typeof r[4] === "number"
+        ? (ch.h ? "https://t.me/" + ch.h + "/" + r[4] : null)
+        : (r[4] || null),
+      hay: norm(r[6]).toLowerCase() + " " + norm(ch.n).toLowerCase(),
+    };
+  }).sort((a,b) => b.ts - a.ts);
+
+  VIDS = (DATA.videos || []).map(v => ({
+    ...v,
+    ts: v.pub ? Date.parse(v.pub) : 0,
+    hay: (norm(v.t) + " " + norm(v.md) + " " + v.c).toLowerCase(),
+  })).sort((a, b) => b.ts - a.ts);
+
+  buildControls();
+  readHash();
+  syncControls();
+  apply();
+
+  $("built").textContent = "Built " + new Date(DATA.built * 60000).toLocaleString()
+    + " · " + ROWS.length + " messages · " + DATA.runs.length + " runs · "
+    + VIDS.length + " videos";
+}
+
+const SRC_LABEL = { telegram: "Telegram", x: "X", youtube: "YouTube" };
+
+function renderCatalog(){
+  const box = $("catalog");
+  box.innerHTML = "";
+  const rows = DATA.catalog || [];
+  if (!rows.length) { box.textContent = "No source list in this payload."; return; }
+
+  ["telegram", "x", "youtube"].forEach(src => {
+    const mine = rows.filter(r => r.src === src);
+    if (!mine.length) return;
+    const grp = document.createElement("div");
+    grp.className = "grp";
+    const h = document.createElement("h2");
+    h.textContent = SRC_LABEL[src] || src;
+    const sub = document.createElement("p");
+    sub.textContent = mine.length + (mine.length === 1 ? " channel" : " channels");
+    grp.append(h, sub);
+
+    // Category order follows whichever vocabulary this source uses, so the
+    // YouTube group reads econ/crypto/tech and the others macro/crypto/stocks.
+    const order = src === "youtube" ? (DATA.vcats || []) : (DATA.cats || []);
+    const seen = [...new Set(mine.map(r => r.cat))];
+    const cats = order.filter(c => seen.includes(c))
+                      .concat(seen.filter(c => !order.includes(c)));
+
+    cats.forEach(cat => {
+      const row = document.createElement("div");
+      row.className = "cat";
+      const pill = document.createElement("span");
+      pill.className = "pill " + (cat || "none");
+      pill.textContent = cat || "—";
+      const chips = document.createElement("div");
+      chips.className = "chips";
+      mine.filter(r => r.cat === cat)
+          .sort((a, b) => a.n.localeCompare(b.n))
+          .forEach(r => {
+            const el = document.createElement(r.u ? "a" : "span");
+            if (r.u) {
+              el.href = r.u; el.target = "_blank";
+              el.rel = "noopener noreferrer"; el.referrerPolicy = "no-referrer";
+            } else {
+              el.title = "Private channel - no public link";
+            }
+            el.textContent = r.n;
+            chips.appendChild(el);
+          });
+      row.append(pill, chips);
+      grp.appendChild(row);
+    });
+    box.appendChild(grp);
+  });
+}
+
+function setTab(t){
+  F.tab = t;
+  $("tab-s").setAttribute("aria-selected", String(t === "s"));
+  $("tab-m").setAttribute("aria-selected", String(t === "m"));
+  $("tab-v").setAttribute("aria-selected", String(t === "v"));
+  const isS = t === "s";
+  $("q").classList.toggle("hidden", isS);
+  $("cats").classList.toggle("hidden", isS);
+  $("chan").parentElement.classList.toggle("hidden", isS);
+  $("bar").classList.toggle("hidden", isS);
+  $("catalog").classList.toggle("hidden", !isS);
+  if (isS) { renderCatalog(); }
+  $("q").placeholder = t === "v" ? "Search video titles and summaries" : "Search messages";
+  // Runs and date range are message concepts; a video's relevant axis is its
+  // channel and category, so hide the controls that would do nothing here.
+  $("src").parentElement.classList.toggle("hidden", t !== "m");
+  $("dates").classList.toggle("hidden", t !== "m");
+  $("list").classList.toggle("hidden", t !== "m");
+  $("summary").classList.toggle("hidden", t !== "m");
+  $("runhead").classList.toggle("hidden", t !== "m");
+  $("videos").classList.toggle("hidden", t !== "v");
+  rebuildCatButtons();
+  rebuildChannelOptions();
+}
+
+function catsFor(tab){
+  // Messages are macro/crypto/stocks; videos are econ/crypto/tech. Two
+  // vocabularies, so the control has to follow the tab or it offers buttons
+  // that match nothing in the list below it.
+  return (tab === "v" ? (DATA.vcats || []) : (DATA.cats || []));
+}
+
+function rebuildCatButtons(){
+  const seg = $("cats");
+  const list = catsFor(F.tab);
+  if (F.cat && !list.includes(F.cat)) F.cat = "";   // stale across tabs
+  seg.innerHTML = "";
+  [["", "All"]].concat(list.map(c => [c, c])).forEach(([v, label]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = label; b.dataset.v = v;
+    b.addEventListener("click", () => { F.cat = v; changed(); });
+    seg.appendChild(b);
+  });
+  syncCats();
+}
+
+function rebuildChannelOptions(){
+  const src = F.tab === "v"
+    ? VIDS.map(v => v.c)
+    : ROWS.filter(r => !F.src || r.src === F.src).map(r => r.chan);
+  const counts = {};
+  src.forEach(n => { counts[n] = (counts[n] || 0) + 1; });
+  const sel = $("chan");
+  const prev = F.ch;
+  sel.innerHTML = '<option value="">All channels</option>';
+  Object.keys(counts).sort((a, b) => counts[b] - counts[a]).forEach(n => {
+    const o = document.createElement("option");
+    o.value = n; o.textContent = n + " (" + counts[n] + ")";
+    sel.appendChild(o);
+  });
+  // A channel selected on one tab usually doesn't exist on the other.
+  if (prev && !counts[prev]) F.ch = "";
+  sel.value = F.ch;
+}
+
+/* Two states. A third "system" position was reachable but indistinguishable:
+   on a machine whose OS is already dark it renders exactly like explicit dark,
+   so the control appeared to have a dead slot. The OS preference still decides
+   the FIRST visit -- it just stops being a position you can land on. */
+function applyTheme(mode){
+  const root = document.documentElement;
+  root.classList.add("no-transition");
+  root.dataset.theme = mode;
+  void root.offsetHeight;            // force the class to take effect first
+  requestAnimationFrame(() => root.classList.remove("no-transition"));
+  const b = $("theme");
+  // The icon offers the destination, not the current state: you tap a moon to
+  // get dark. Labelling it with the current theme reads as a status light and
+  // people tap expecting nothing to happen.
+  if (b) {
+    b.textContent = mode === "dark" ? "\u2600\uFE0F" : "\uD83C\uDF19";
+    b.title = mode === "dark" ? "Switch to light" : "Switch to dark";
+  }
+}
+
+function initTheme(){
+  let mode;
+  try { mode = localStorage.getItem("theme"); } catch (e) {}
+  if (mode !== "light" && mode !== "dark") {
+    mode = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  applyTheme(mode);
+  $("theme").addEventListener("click", () => {
+    const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    // localStorage throws outright in some privacy modes; a theme preference
+    // is not worth breaking the page over.
+    try { localStorage.setItem("theme", next); } catch (e) {}
+    applyTheme(next);
+  });
+}
+
+function buildControls(){
+  initTheme();
+  $("tab-s").addEventListener("click", () => { setTab("s"); changed(); });
+  $("tab-m").addEventListener("click", () => { setTab("m"); changed(); });
+  $("tab-v").addEventListener("click", () => { setTab("v"); changed(); });
+
+  const srcSel = $("src");
+  srcSel.innerHTML = '<option value="">All sources</option>';
+  (DATA.srcs || []).forEach(name => {
+    const n = ROWS.filter(r => r.src === name).length;
+    const o = document.createElement("option");
+    o.value = name; o.textContent = name + " (" + n + ")";
+    srcSel.appendChild(o);
+  });
+  srcSel.addEventListener("change", e => {
+    F.src = e.target.value;
+    rebuildChannelOptions();   // channel list is scoped to the source
+    changed();
+  });
+
+  const runSel = $("run");
+  runSel.innerHTML = '<option value="">All cycles</option>';
+  DATA.runs.forEach(r => {
+    const o = document.createElement("option");
+    o.value = String(r.id);
+    o.textContent = r.label + (r.trig === "manual" ? " (ad-hoc)" : "");
+    runSel.appendChild(o);
+  });
+
+  const chSel = $("chan");
+  rebuildChannelOptions();
+
+  let t;
+  $("q").addEventListener("input", e => {
+    clearTimeout(t);
+    t = setTimeout(() => { F.q = e.target.value.trim(); changed(); }, 120);
+  });
+  runSel.addEventListener("change", e => { F.run = e.target.value; changed(); });
+  chSel.addEventListener("change", e => { F.ch = e.target.value; changed(); });
+  $("from").addEventListener("change", e => { F.from = e.target.value; changed(); });
+  $("to").addEventListener("change", e => { F.to = e.target.value; changed(); });
+  $("clear").addEventListener("click", () => {
+    F.q = F.src = F.cat = F.ch = F.run = F.from = F.to = "";
+    rebuildChannelOptions(); syncControls(); changed();
+  });
+  setTab(F.tab);
+}
+
+function syncControls(){
+  $("q").value = F.q;
+  $("src").value = F.src;
+  $("run").value = F.run;
+  $("chan").value = F.ch;
+  $("from").value = F.from;
+  $("to").value = F.to;
+  syncCats();
+}
+
+function syncCats(){
+  [...$("cats").children].forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset.v === F.cat)));
+}
+
+/* ---------- fragment <-> filters ----------
+   Fragments never reach the server, so GitHub's logs can't learn which run or
+   search was opened. replaceState (not push) keeps the back button meaning
+   "leave the page", not "undo one keystroke". */
+function readHash(){
+  const p = new URLSearchParams(location.hash.slice(1));
+  F.q = p.get("q") || ""; F.cat = p.get("cat") || ""; F.ch = p.get("ch") || "";
+  F.src = p.get("src") || "";
+  F.run = p.get("run") || ""; F.from = p.get("from") || ""; F.to = p.get("to") || "";
+  F.tab = ["s", "v"].includes(p.get("tab")) ? p.get("tab") : "m";
+  if (F.cat && !catsFor(F.tab).includes(F.cat)) F.cat = "";
+  if (F.run && !DATA.runs.some(r => String(r.id) === F.run)) F.run = "";  // rolled out of window
+  setTab(F.tab);
+}
+
+function writeHash(){
+  const p = new URLSearchParams();
+  Object.entries(F).forEach(([k, v]) => {
+    if (!v) return;
+    if (k === "tab" && v === "m") return;  // default tab stays out of the URL
+    if (F.tab === "s" && k !== "tab") return;  // Sources ignores every filter
+    p.set(k, v);
+  });
+  const s = p.toString();
+  history.replaceState(null, "", s ? "#" + s : location.pathname);
+}
+
+function changed(){ syncCats(); writeHash(); apply(); }
+
+/* ---------- filter ---------- */
+function apply(){
+  if (F.tab === "s") { renderCatalog(); $("empty").classList.add("hidden"); return; }
+  if (F.tab === "v") { applyVideos(); return; }
+  const run = F.run ? DATA.runs.find(r => String(r.id) === F.run) : null;
+  const q = norm(F.q).toLowerCase();
+  const fromMs = F.from ? new Date(F.from + "T00:00:00").getTime() : null;
+  const toMs = F.to ? new Date(F.to + "T23:59:59").getTime() : null;
+  // Ad-hoc runs consume since 2026-09-07 (rows carry run_id), but older ones
+  // did not, so a manual run still resolves by its recorded window, which
+  // spans every row it summarized in both eras (window_start is widened to
+  // the oldest undigested row on the newer path).
+  const win = run && run.trig === "manual"
+    ? [ (run.start || 0) * 60000, run.end * 60000 ] : null;
+
+  VIEW = ROWS.filter(r => {
+    if (F.src && r.src !== F.src) return false;
+    if (F.cat && r.cat !== F.cat) return false;
+    if (F.ch && r.chan !== F.ch) return false;
+    if (run) {
+      if (win) { if (r.ts < win[0] || r.ts > win[1]) return false; }
+      else if (r.runId !== run.id) return false;
+    }
+    if (fromMs !== null && r.ts < fromMs) return false;
+    if (toMs !== null && r.ts > toMs) return false;
+    if (q && !r.hay.includes(q)) return false;
+    return true;
+  });
+
+  // One box per run of consecutive messages from the same channel. A channel
+  // like zerohedge posting 7 times in a row was 7 near-identical headers of
+  // chrome for 7 one-line posts; the header is worth paying for once.
+  GROUPS = [];
+  VIEW.forEach(r => {
+    const last = GROUPS[GROUPS.length - 1];
+    if (last && last[0].chIdx === r.chIdx) last.push(r);
+    else GROUPS.push([r]);
+  });
+
+  renderSummary(run);
+  $("count").textContent = VIEW.length + (VIEW.length === 1 ? " message" : " messages");
+  $("list").innerHTML = "";
+  shown = 0;
+  $("empty").classList.toggle("hidden", VIEW.length > 0);
+  renderMore();
+}
+
+function renderSummary(run){
+  const box = $("summary"), head = $("runhead");
+  box.innerHTML = ""; head.textContent = "";
+  if (!run) return;
+  DATA.cats.forEach(c => {
+    const s = run.secs && run.secs[c];
+    if (!s || !s.t) return;
+    if (F.cat && F.cat !== c) return;
+    const d = document.createElement("div");
+    d.className = "sec";
+    d.style.borderLeftColor = getComputedStyle(document.documentElement)
+      .getPropertyValue("--" + c) || "var(--accent)";
+    const h = document.createElement("h2");
+    h.textContent = c + " · " + s.n + " source messages";
+    const b = document.createElement("div");
+    b.className = "body"; renderSlack(b, s.t);
+    d.append(h, b); box.appendChild(d);
+  });
+  head.textContent = "Source messages for " + run.label;
+}
+
+/* ---------- videos ---------- */
+function applyVideos(){
+  const q = norm(F.q).toLowerCase();
+  const list = VIDS.filter(v => {
+    if (F.cat && v.cat !== F.cat) return false;
+    if (F.ch && v.c !== F.ch) return false;
+    if (q && !v.hay.includes(q)) return false;
+    return true;
+  });
+  $("count").textContent = list.length + (list.length === 1 ? " video" : " videos");
+  $("empty").classList.toggle("hidden", list.length > 0);
+  const box = $("videos");
+  box.innerHTML = "";
+  const frag = document.createDocumentFragment();
+  list.forEach(v => frag.appendChild(videoCard(v)));
+  box.appendChild(frag);
+}
+
+function fmtDur(s){
+  if (!s) return "";
+  const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
+  return h ? `${h}h ${m}m` : `${m}m`;
+}
+
+function videoCard(v){
+  const el = document.createElement("div");
+  el.className = "vid";
+  el.id = "v" + v.v;
+  if (v.cat) el.dataset.cat = v.cat;
+
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  const pill = document.createElement("span");
+  pill.className = "pill " + (v.cat || "none");
+  pill.textContent = v.cat || "—";
+  const chan = document.createElement("span");
+  chan.className = "chan"; chan.textContent = v.c;
+  const when = document.createElement("span");
+  when.textContent = [v.pub ? new Date(v.pub).toLocaleDateString() : "", fmtDur(v.dur)]
+    .filter(Boolean).join(" · ");
+  meta.append(pill, chan, when);
+  const watch = document.createElement("a");
+  watch.href = "https://www.youtube.com/watch?v=" + v.v;
+  watch.target = "_blank"; watch.rel = "noopener noreferrer";
+  watch.referrerPolicy = "no-referrer"; watch.textContent = "watch ↗";
+  // Copies the summary as Markdown, headings included, so it pastes usefully
+  // into notes rather than arriving as one undifferentiated blob.
+  meta.appendChild(actions(
+    copyBtn(() => "# " + v.t + "\n" + v.c
+      + " · https://www.youtube.com/watch?v=" + v.v + "\n\n" + v.md),
+    watch,
+  ));
+
+  const h = document.createElement("h3");
+  const link = document.createElement("a");
+  link.href = "https://www.youtube.com/watch?v=" + v.v;
+  link.target = "_blank"; link.rel = "noopener noreferrer";
+  link.referrerPolicy = "no-referrer"; link.textContent = v.t;
+  h.appendChild(link);
+
+  const sum = document.createElement("div");
+  sum.className = "sum clip";
+  renderMarkdown(sum, v.md);
+
+  const btn = document.createElement("button");
+  btn.type = "button"; btn.className = "more"; btn.textContent = "Show full summary";
+  btn.addEventListener("click", () => {
+    const clipped = sum.classList.toggle("clip");
+    btn.textContent = clipped ? "Show full summary" : "Collapse";
+  });
+
+  el.append(meta, h, sum, btn);
+  return el;
+}
+
+/* Digest sections are Slack mrkdwn: <url|text> links and *bold* theme headings.
+   Same no-innerHTML discipline as renderMarkdown below -- every piece lands as
+   textContent or an <a> whose href is only accepted when it is http(s). */
+function renderSlack(root, text){
+  root.textContent = "";
+  (text || "").split(/(<https?:\/\/[^|>\s]+\|[^>]+>)/g).forEach(part => {
+    const link = part.match(/^<(https?:\/\/[^|>\s]+)\|([^>]+)>$/);
+    if (link) {
+      const a = document.createElement("a");
+      a.href = link[1]; a.textContent = link[2];
+      a.target = "_blank"; a.rel = "noopener noreferrer"; a.referrerPolicy = "no-referrer";
+      root.appendChild(a);
+      return;
+    }
+    // *bold* only at token boundaries, so "3*4*5" and bare asterisks stay literal.
+    part.split(/(^|\s)\*([^*\n]+?)\*(?=\s|$|[:.,])/g).forEach((seg, i) => {
+      if (!seg) return;
+      if (i % 3 === 2) {
+        const b = document.createElement("strong");
+        b.textContent = seg; root.appendChild(b);
+      } else {
+        root.appendChild(document.createTextNode(seg));
+      }
+    });
+  });
+}
+
+/* Minimal Markdown: the summaries only ever use ##, bullets and **bold**, so a
+   full parser (and the XSS surface of setting innerHTML on model output) is not
+   worth it. Everything lands as textContent -- nothing here can inject HTML. */
+function renderMarkdown(root, md){
+  let list = null;
+  const flush = () => { list = null; };
+
+  const inline = (parent, text) => {
+    // **bold** only; split keeps the delimiters' contents at odd indices.
+    text.split(/\*\*(.+?)\*\*/g).forEach((part, i) => {
+      if (!part) return;
+      if (i % 2) {
+        const b = document.createElement("strong");
+        b.textContent = part; parent.appendChild(b);
+      } else {
+        parent.appendChild(document.createTextNode(part));
+      }
+    });
+  };
+
+  (md || "").split("\n").forEach(raw => {
+    const line = raw.trim();
+    if (!line) { flush(); return; }
+    const head = line.match(/^#{1,6}\s+(.*)$/);
+    if (head) {
+      flush();
+      const h = document.createElement("h2");
+      h.textContent = head[1];
+      root.appendChild(h);
+      return;
+    }
+    const bullet = line.match(/^[-*]\s+(.*)$/);
+    if (bullet) {
+      if (!list) { list = document.createElement("ul"); root.appendChild(list); }
+      const li = document.createElement("li");
+      inline(li, bullet[1]);
+      list.appendChild(li);
+      return;
+    }
+    flush();
+    const p = document.createElement("p");
+    inline(p, line);
+    root.appendChild(p);
+  });
+}
+
+/* ---------- render ---------- */
+function highlight(el, text, q){
+  if (!q) { el.textContent = text; return; }
+  const hay = norm(text).toLowerCase();
+  let i = 0, at;
+  el.textContent = "";
+  while ((at = hay.indexOf(q, i)) !== -1) {
+    el.appendChild(document.createTextNode(text.slice(i, at)));
+    const m = document.createElement("mark");
+    m.textContent = text.slice(at, at + q.length);
+    el.appendChild(m);
+    i = at + q.length;
+  }
+  el.appendChild(document.createTextNode(text.slice(i)));
+}
+
+function copyBtn(getText, label){
+  const b = document.createElement("button");
+  b.type = "button";
+  b.textContent = label || "copy";
+  b.addEventListener("click", async e => {
+    e.stopPropagation();
+    const text = getText();
+    let ok = true;
+    try {
+      // Needs a secure context. The published site is HTTPS and localhost
+      // counts, but a plain-http preview would land in the fallback below.
+      await navigator.clipboard.writeText(text);
+    } catch (_) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand("copy");
+        ta.remove();
+      } catch (_) { ok = false; }
+    }
+    const was = b.textContent;
+    b.textContent = ok ? "copied ✓" : "copy failed";
+    b.classList.toggle("done", ok);
+    setTimeout(() => { b.textContent = was; b.classList.remove("done"); }, 1400);
+  });
+  return b;
+}
+
+function actions(...els){
+  const wrap = document.createElement("span");
+  wrap.className = "actions";
+  els.filter(Boolean).forEach(el => wrap.appendChild(el));
+  return wrap;
+}
+
+function openLink(url){
+  const link = document.createElement("a");
+  // Without no-referrer, following a link tells Telegram/X this archive's URL.
+  link.href = url; link.target = "_blank";
+  link.rel = "noopener noreferrer"; link.referrerPolicy = "no-referrer";
+  link.textContent = "open ↗";
+  return link;
+}
+
+function bodyFor(r, q){
+  const body = document.createElement("div");
+  body.className = "text clip";
+  highlight(body, r.text, q);
+  const wrap = document.createDocumentFragment();
+  wrap.appendChild(body);
+  if (r.text.length > 400) {
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "more"; btn.textContent = "Show more";
+    btn.addEventListener("click", () => {
+      const clipped = body.classList.toggle("clip");
+      btn.textContent = clipped ? "Show more" : "Show less";
+    });
+    wrap.appendChild(btn);
+  }
+  return wrap;
+}
+
+function groupCard(group, q){
+  const first = group[0];
+  const a = document.createElement("article");
+  a.id = "m" + first.id;
+  if (first.cat) a.dataset.cat = first.cat;   // drives the coloured left edge
+
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  const pill = document.createElement("span");
+  pill.className = "pill " + (first.cat || "none");
+  pill.textContent = first.cat || "—";
+  const chan = document.createElement("span");
+  chan.className = "chan"; chan.textContent = first.chan;
+  meta.append(pill, chan);
+
+  if (group.length === 1) {
+    const time = document.createElement("span");
+    time.textContent = new Date(first.ts).toLocaleString();
+    meta.appendChild(time);
+    meta.appendChild(actions(
+      copyBtn(() => first.text),
+      first.url ? openLink(first.url) : null,
+    ));
+    a.append(meta, bodyFor(first, q));
+    return a;
+  }
+
+  // Newest first within the list, so the range reads oldest -> newest.
+  const lo = group[group.length - 1], hi = group[0];
+  const sameDay = new Date(lo.ts).toDateString() === new Date(hi.ts).toDateString();
+  const range = document.createElement("span");
+  range.textContent = sameDay
+    ? new Date(lo.ts).toLocaleDateString() + ", "
+      + new Date(lo.ts).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}) + " – "
+      + new Date(hi.ts).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"})
+    : new Date(lo.ts).toLocaleString() + " – " + new Date(hi.ts).toLocaleString();
+  const n = document.createElement("span");
+  n.className = "gcount"; n.textContent = group.length + " messages";
+  meta.append(range, n);
+  // Copying the whole run is the common case for a burst from one channel;
+  // oldest-first, since that is the order it was actually posted in.
+  meta.appendChild(actions(copyBtn(
+    () => group.slice().reverse().map(r => r.text).join("\n\n"), "copy all")));
+  a.appendChild(meta);
+
+  group.forEach(r => {
+    const item = document.createElement("div");
+    item.className = "gitem";
+    item.id = "m" + r.id;
+    const head = document.createElement("div");
+    head.className = "gtime";
+    const t = document.createElement("span");
+    t.textContent = new Date(r.ts).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+    head.appendChild(t);
+    head.appendChild(actions(
+      copyBtn(() => r.text),
+      r.url ? openLink(r.url) : null,
+    ));
+    item.append(head, bodyFor(r, q));
+    a.appendChild(item);
+  });
+  return a;
+}
+
+function renderMore(){
+  const q = norm(F.q).toLowerCase();
+  const frag = document.createDocumentFragment();
+  const end = Math.min(shown + PAGE, GROUPS.length);
+  for (let i = shown; i < end; i++) frag.appendChild(groupCard(GROUPS[i], q));
+  $("list").appendChild(frag);
+  shown = end;
+}
+
+new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting && shown < GROUPS.length) renderMore();
+}, { rootMargin: "600px" }).observe($("more"));
+</script>
+</body>
+</html>
